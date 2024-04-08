@@ -30,7 +30,7 @@ class _HomepageState extends State<Homepage> {
               ),
               child: Center(
                 child: Text(
-                  'Item $index',
+                  'Recept $index',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20
