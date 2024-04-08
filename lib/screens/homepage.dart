@@ -24,7 +24,10 @@ class _HomepageState extends State<Homepage> {
           Padding(
             padding: const EdgeInsets.all(13),
             child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.0),
               color: turqoise,
+              ),
               child: Center(
                 child: Text(
                   'Item $index',
