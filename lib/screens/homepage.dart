@@ -1,44 +1,80 @@
+import 'package:cookbook/components/gridimages.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import '../screens/recipepage.dart';
 
-class Homepage extends StatefulWidget {
-  const Homepage({Key? key}) : super(key: key);
+class Homepage extends StatelessWidget {
+   Homepage({Key? key}) : super(key: key);
+
+
+  List<RecipeModel> recipes = [];
+
+   void _getRecipes(){
+    recipes = RecipeModel.getRecipe();
+   }
 
   @override
-  State<Homepage> createState() => _HomepageState();
-}
-
-class _HomepageState extends State<Homepage> {
-  @override
-  Widget build(BuildContext context) {
+Widget build(BuildContext context) {
+    _getRecipes();
     return Scaffold(
       appBar: appBar(),
       body: GridView.builder(
-        itemCount: 10,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        itemCount: recipes.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-        ), 
+        ),
         itemBuilder: (BuildContext context, int index) {
-          return GridTile(
-            child: 
-          Padding(
-            padding: const EdgeInsets.all(13),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8.0),
-              color: turqoise,
-              ),
-              child: Center(
-                child: Text(
-                  'Recept $index',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20
+          return GestureDetector(
+            onTap: () {
+              // Navigeer naar de volgende pagina wanneer op een item wordt geklikt
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const RecipePage()), // Vervang NextPage door de naam van je volgende pagina
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10, top: 20),
+              child: Stack(
+                children: [
+                  // Image
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6.0),
+                      image: DecorationImage(
+                        image: AssetImage(recipes[index].recipeImage),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                ),
-                ),
+                  // Tekst overlay
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8.0),
+                          bottomRight: Radius.circular(8.0),
+                        ),
+                        color: Colors.black
+                            .withOpacity(0.5), // Zwarte overlay met opacity
+                      ),
+                      padding: EdgeInsets.all(8.0),
+                      child: Text(
+                        recipes[index].recipeName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           );
         },
       ),
