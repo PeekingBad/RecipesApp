@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cookbook/components/recipemodel.dart';
 import '../constants.dart';
@@ -8,15 +9,28 @@ import 'package:permission_handler/permission_handler.dart';
 
 // Vraag toestemming aan de gebruiker
 
-
 class Homepage extends StatefulWidget {
-  Homepage({Key? key}) : super(key: key);
+  const Homepage({Key? key}) : super(key: key);
 
   @override
   State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
+  File? image;
+
+  Future pickImage(ImageSource source) async {
+    try {
+      final image = await ImagePicker().pickImage(source: source);
+      if (image == null) return;
+
+      final imageTemporary = File(image.path);
+      setState(() => this.image = imageTemporary);
+    } on PlatformException catch (e) {
+      print('Failed to pick image: $e');
+    }
+  }
+
   List<RecipeModel> recipes = [];
 
   void _getRecipes() {
@@ -108,9 +122,13 @@ class _HomepageState extends State<Homepage> {
       centerTitle: true,
       elevation: 0.0,
       leading: IconButton(
-        icon: Icon(Icons.add,color: Colors.white,),
+        icon: Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
         onPressed: () {
-          _showAddDialog();
+          TextEditingController _userInput = new TextEditingController();
+          addRecipe(_userInput);
         },
       ),
       actions: [
@@ -119,13 +137,13 @@ class _HomepageState extends State<Homepage> {
           child: Container(
             margin: EdgeInsets.all(10),
             width: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Image.asset(
               'assets/images/account.png',
               height: 30,
               width: 30,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
             ),
           ),
         )
@@ -133,86 +151,90 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-Future<void> _showAddDialog() async {
-    TextEditingController _nameController = TextEditingController();
-    File? _image;
-
-    // Vraag toestemming aan de gebruiker
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.camera,
-      Permission.storage,
-    ].request();
-
-    // Controleer of de toestemming is verleend voor camera en opslag
-    if (statuses[Permission.camera] != PermissionStatus.granted ||
-        statuses[Permission.storage] != PermissionStatus.granted) {
-      // Toestemming niet verleend, toon een melding of handel anderszins
-      print('Toestemming niet verleend voor camera of opslag.');
-      return; // Stop de functie als de toestemming niet is verleend
-    }
-
-    // Toon het dialoogvenster om een nieuw gerecht toe te voegen
-    await showDialog<void>(
+  Future<dynamic> addRecipe(TextEditingController _userInput) {
+    return showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Voeg een nieuw gerecht toe'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
+      builder: (context) => Column(
+        children: [
+          AlertDialog(
+            title: Text('Add your recipe'),
+            content: Column(
+              children: [
                 TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Naam van het gerecht',
+                  controller: _userInput,
+                  decoration: InputDecoration(labelText: 'Name of your recipe'),
+                ),
+                const SizedBox(
+                  height: 40,
+                ),
+                Container(
+                  width: double.infinity,
+                  height: 40,
+                  child: ElevatedButton(
+                    onPressed: () => pickImage(ImageSource.gallery),
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          Colors.blue), // Achtergrondkleur instellen op blauw
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Icon(Icons.add_circle_rounded, color: Colors.white,), // Icon
+                        SizedBox(width: 8),
+                        Text('Choose an image', style: TextStyle(color: Colors.white),), // Tekst
+                      ],
+                    ),
                   ),
                 ),
-                SizedBox(height: 10),
-                _image == null
-                    ? Text('Voeg een afbeelding toe')
-                    : Image.file(_image!),
-                TextButton(
-                  onPressed: () async {
-                    final pickedFile = await ImagePicker().pickImage(
-                      source: ImageSource.gallery,
-                    );
-
-                    setState(() {
-                      if (pickedFile != null) {
-                        _image = File(pickedFile.path);
-                      } else {
-                        print('Geen afbeelding geselecteerd.');
-                      }
-                    });
-                  },
-                  child: Text('Selecteer een afbeelding'),
+                const SizedBox(height: 20,),
+                Container(
+                  width: double.infinity,
+                  height: 40,
+                  child: ElevatedButton(
+                    onPressed: () => pickImage(ImageSource.camera),
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          Colors.blue), // Achtergrondkleur instellen op blauw
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Icon(Icons.add_circle_rounded, color: Colors.white,), // Icon
+                        SizedBox(width: 8),
+                        Text('Take a photo', style: TextStyle(color: Colors.white),), // Tekst
+                      ],
+                    ),
+                  ),
                 ),
+                const SizedBox(height: 40,),
+                image != null ? Image.file(image!, width: 160, height: 160, fit: BoxFit.cover,) : FlutterLogo()
+                
               ],
             ),
+            
+            actions: [
+              TextButton(
+               child: const Text('Cancel'),
+               onPressed: () => Navigator.pop(context),
+              ),
+              TextButton(
+                child: const Text('Add'),
+                onPressed: () {
+                  recipes.add(RecipeModel(
+                    recipeName: _userInput.text, 
+                    recipeImage: image!.path),
+                    );
+                    Navigator.of(context).pop();
+                    setState(() {
+                      
+                    });
+                },
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Annuleren'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Toevoegen'),
-              onPressed: () {
-                // Voeg hier de logica toe om het gerecht toe te voegen
-                // bijvoorbeeld:
-                recipes.add(RecipeModel(
-                  recipeName: _nameController.text,
-                  recipeImage: _image!.path,
-                ));
-                Navigator.of(context).pop();
-                setState(() {});
-              },
-            ),
-          ],
-        );
-      },
+        ],
+      ),
+      
     );
   }
-
 }
